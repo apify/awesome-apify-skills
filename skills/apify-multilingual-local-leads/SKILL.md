@@ -68,14 +68,17 @@ returns a different and usually larger set than `dentist Berlin`.
 ### 2. Run
 
 ```bash
-apify call highbrow_fame/google-maps-email-extractor --input '{
+apify actors call "highbrow_fame/google-maps-email-extractor" \
+  --input '{
   "searchQueries": ["Zahnarzt Berlin"],
   "language": "de",
   "maxResults": 100,
   "scrapeEmails": true,
   "validateEmails": true,
   "proxyConfiguration": { "useApifyProxy": true, "apifyProxyGroups": ["RESIDENTIAL"] }
-}'
+}' \
+  --user-agent apify-awesome-skills/apify-multilingual-local-leads \
+  --json 2>/dev/null
 ```
 
 `language` accepts 48 codes. It sets the Maps interface language and selects which
@@ -92,12 +95,13 @@ Every row with a `primaryEmail` also carries `emailValidation`:
 | Field | Meaning |
 |-------|---------|
 | `deliverability` | `high`, `medium`, `low` or `unknown` |
-| `mxFound` | The domain has mail servers at all |
-| `spf` / `dmarc` | Sender-policy records present |
-| `catchAll` | Domain accepts any address, so an SMTP probe proves nothing |
+| `mxRecords` | How many mail servers the domain has; `0` means it cannot receive mail |
+| `hasSpf` / `hasDmarc` | Sender-policy records present |
+| `isCatchAll` | Domain accepts any address, so an SMTP probe proves nothing |
+| `smtpValid` | SMTP probe result, or `null` when the server gave no usable answer |
 
-Filter on `emailValidation.deliverability === "high"` before a cold send. A `catchAll: true`
-domain is the usual reason an address looks fine and still bounces.
+Filter on `emailValidation.deliverability === "high"` before a cold send. An
+`isCatchAll: true` domain is the usual reason an address looks fine and still bounces.
 
 ## Workflow B: more than 120 results from one city
 
@@ -129,12 +133,23 @@ Google's stable place ID and CID, so a renamed business is still recognised.
   may have turned it off to save time. Check it first when emails are missing.
 - **`sinceDatasetId` needs state.** It only works if you kept the dataset ID from last time.
   On a first run, leave it empty.
-- **Do not treat `catchAll: true` as a valid address.** It means the server accepts everything,
-  including addresses that do not exist.
+- **Do not treat `isCatchAll: true` as a valid address.** It means the server accepts
+  everything, including addresses that do not exist. `smtpValid` is `null` on those
+  domains because the probe cannot tell a real mailbox from a wildcard.
 - **Cold outreach is regulated.** In Germany, Austria and Switzerland unsolicited commercial
   email requires prior consent under UWG §7(2)3, for companies as well as individuals. In the
   US, CAN-SPAM allows opt-out. A verified address is not the same as permission to write to it,
   and this skill does not give legal advice.
+
+## Example prompts
+
+- "Build me a list of dentists in Berlin with verified email addresses."
+- "I need more than 120 restaurants in Milan, not just the first page."
+- "Re-run last week's Paris agency list but skip the ones I already have."
+
+Not this one: "Find me the personal email of the marketing director at these ten
+companies." This skill returns published business contact addresses from company
+websites. It does not identify named individuals or guess personal address patterns.
 
 ## Output
 
