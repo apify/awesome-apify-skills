@@ -6,6 +6,7 @@ author_url: https://github.com/johnisanerd
 license: MIT
 metadata:
   version: "1.0"
+  keywords: ["successfactors", "successfactors jobs", "successfactors api", "ats", "jobs", "mcp"]
 ---
 
 # SAP SuccessFactors Jobs, as Rows You Can Query
