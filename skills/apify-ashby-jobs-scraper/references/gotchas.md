@@ -20,7 +20,7 @@ Read `pricingInfos` from the output. Events are per delivered row; filtered rows
 
 ## Error recovery
 
-- `board_not_found`: check `didYouMean` on the error row; paste the board URL when a name will not resolve.
+- `board_not_found`: check `didYouMean` if present on the error row; paste the board URL when a name will not resolve.
 - `job_not_found`: the single-job URL points at a closed posting; fetch the board instead.
 - `http_error`: transient upstream answer; retry once, then check the board in a browser.
 - `invalid_url`: the entry is not an Ashby slug, name, or jobs.ashbyhq.com URL.
