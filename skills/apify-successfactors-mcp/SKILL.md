@@ -6,6 +6,7 @@ author_url: https://github.com/johnisanerd
 license: MIT
 metadata:
   version: "1.0"
+  keywords: ["successfactors", "successfactors mcp", "mcp", "jobs", "ats", "claude"]
 ---
 
 # SAP SuccessFactors Jobs, Inside Claude
