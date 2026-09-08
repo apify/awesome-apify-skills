@@ -60,13 +60,15 @@
       "name": "apify-ashby-jobs-scraper",
       "source": "./skills/apify-ashby-jobs-scraper",
       "skills": "./",
-      "description": "\"Scrape Ashby jobs from any jobs.ashbyhq.com board with the Apify Ashby Job Board API Actor (johnvc/ashby-job-board-scraper). Returns live job rows as JSON: title, company, department, team, employment type, workplace type, remote flag, locations with derived countries, publish date, apply URL, the employer's own published pay as flat salaryMin, salaryMax, salaryCurrency and salaryPeriod columns plus an offersEquity flag, and the description as Markdown by default. Takes company names, board slugs, or board URLs; filters by title, department, location, employment type, and remote before billing; publishedAfter turns a daily schedule into a new-postings feed. Use when someone wants ashby jobs data, an ashby jobs api, to scrape ashby job postings for a job board or aggregator, ashby salary data, or listings from OpenAI, Ramp, Notion, Linear, Cerebras and other Ashby-hosted careers pages. Billed per job delivered with no start fee, and MCP-ready for Claude and other AI agents.\"",
+      "description": "\"Scrape Ashby jobs or discover companies using Ashby with the Apify Ashby Job Board API Actor (johnvc/ashby-job-board-scraper). Job mode returns live job rows with title, company, location, remote and employment fields, publish date, apply URL, employer-published salary columns, equity flag, and Markdown descriptions. Company mode finds Ashby boards from a bundled directory or checks a prospect list, returning company name, board slug and URL, live open-job count, and verification fields. Takes company names, board slugs, or board URLs; supports pre-billing job filters and publishedAfter feeds. Use for Ashby jobs data or API requests, salary and remote-role collection, job-board pipelines, companies using Ashby/Ashby customers, ATS market maps, prospect checks, and recruiting or sales target lists. Billed per delivered result with no start fee, and MCP-ready for Claude and other AI agents.\"",
       "keywords": [
         "ashby",
         "jobs",
         "job-board",
         "salary",
-        "remote-work"
+        "remote-work",
+        "company-discovery",
+        "prospect-check"
       ],
       "category": "data-extraction"
     },

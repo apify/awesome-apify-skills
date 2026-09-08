@@ -1,14 +1,16 @@
 # Actor routing table
 
-One Actor powers both Ashby skills; the skills differ in which output mode and question they are shaped for. Routes to `apify-companies-using-ashby` apply only when that companion skill is installed.
+One Actor and one skill cover three output modes. Route by question and input shape.
 
-| Question | Skill | Actor input shape |
+| Question | Actor mode | Actor input shape |
 |---|---|---|
-| Job rows with salary from named boards | apify-ashby-jobs-scraper | default `jobs` mode, `companies` list, filters |
-| New postings since yesterday | apify-ashby-jobs-scraper | `publishedAfter: "25h"` on a schedule |
-| Which companies use Ashby | apify-companies-using-ashby | `outputMode: "companiesOnly"`, directory sweep |
-| Does this company have an Ashby board | apify-companies-using-ashby | `outputMode: "companiesOnly"`, your `companies` list |
-| Cheapest full index of a board | either | `outputMode: "urlsOnly"` |
+| Job rows with salary from named boards | `jobs` | explicit `outputMode: "jobs"`, `companies` list, filters |
+| New postings since yesterday | `jobs` | explicit `outputMode: "jobs"`, `publishedAfter: "25h"` on a schedule |
+| Which companies use Ashby | `companiesOnly` | directory sweep, optionally with `discoveryQuery` |
+| Does this company have an Ashby board | `companiesOnly` | your `companies` list |
+| Cheapest full index of a board | `urlsOnly` | `companies` list or board input |
+
+For a discovery-to-jobs pipeline, keep only valid `company` rows, dedupe their non-empty `boardToken` values, and pass those values as `companies` in a second call with explicit `outputMode: "jobs"`. Stop when no valid tokens remain: `companies: []` triggers a directory sweep and would broaden the run.
 
 - Actor: https://apify.com/johnvc/ashby-job-board-scraper?fpr=9n7kx3&fp_sid=awesomeskills
 - Actor ID: `johnvc/ashby-job-board-scraper`
