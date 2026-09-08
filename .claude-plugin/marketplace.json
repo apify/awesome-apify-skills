@@ -57,6 +57,20 @@
       "category": "data-extraction"
     },
     {
+      "name": "apify-ashby-jobs-scraper",
+      "source": "./skills/apify-ashby-jobs-scraper",
+      "skills": "./",
+      "description": "\"Scrape Ashby jobs from any jobs.ashbyhq.com board with the Apify Ashby Job Board API Actor (johnvc/ashby-job-board-scraper). Returns live job rows as JSON: title, company, department, team, employment type, workplace type, remote flag, locations with derived countries, publish date, apply URL, the employer's own published pay as flat salaryMin, salaryMax, salaryCurrency and salaryPeriod columns plus an offersEquity flag, and the description as Markdown by default. Takes company names, board slugs, or board URLs; filters by title, department, location, employment type, and remote before billing; publishedAfter turns a daily schedule into a new-postings feed. Use when someone wants ashby jobs data, an ashby jobs api, to scrape ashby job postings for a job board or aggregator, ashby salary data, or listings from OpenAI, Ramp, Notion, Linear, Cerebras and other Ashby-hosted careers pages. Billed per job delivered with no start fee, and MCP-ready for Claude and other AI agents.\"",
+      "keywords": [
+        "ashby",
+        "jobs",
+        "job-board",
+        "salary",
+        "remote-work"
+      ],
+      "category": "data-extraction"
+    },
+    {
       "name": "apify-booking-host-leads",
       "source": "./skills/apify-booking-host-leads",
       "skills": "./",
@@ -228,6 +242,31 @@
         "unlinked-mentions",
         "competitor-links",
         "resource-pages"
+      ],
+      "category": "data-extraction"
+    },
+    {
+      "name": "apify-local-business-leads-osm",
+      "source": "./skills/apify-local-business-leads-osm",
+      "skills": "./",
+      "description": "Build a local-business lead list without scraping Google Maps. Routes \"find dentists / plumbers / salons / restaurants in <city> with emails\", \"business email finder for <category> in <city>\", \"web-design prospects with no website or a weak one\", \"enrich my list of business websites with verified emails\", \"leads within 5 km of an address\" and \"alert me when new businesses appear\" to an OpenStreetMap-based Actor that crawls each business's own website and returns one 73-column row per business with an MX-verified email, phone, social profiles, website platform and a 0-100 lead score. No Google Maps, no API key, no proxy, no login; every filter runs before billing. Use when the user wants local B2B leads for cold email or calls, a Google Maps alternative that avoids Google's terms, a bring-your-own-website-list enrichment pass, or a scheduled new-business watch for one category and city.",
+      "keywords": [
+        "local-business",
+        "leads",
+        "lead-generation",
+        "business-emails",
+        "email-finder",
+        "verified-emails",
+        "mx-verification",
+        "openstreetmap",
+        "osm",
+        "google-maps-alternative",
+        "cold-email",
+        "web-design-prospects",
+        "lead-scoring",
+        "b2b",
+        "small-business",
+        "apify"
       ],
       "category": "data-extraction"
     },
