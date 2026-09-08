@@ -1,6 +1,6 @@
 # Actor routing table
 
-One Actor powers both Ashby skills; the skills differ in which output mode and question they are shaped for.
+One Actor powers both Ashby skills; the skills differ in which output mode and question they are shaped for. Routes to `apify-companies-using-ashby` apply only when that companion skill is installed.
 
 | Question | Skill | Actor input shape |
 |---|---|---|

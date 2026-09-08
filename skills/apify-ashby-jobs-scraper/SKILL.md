@@ -6,6 +6,7 @@ author_url: https://github.com/johnisanerd
 license: MIT
 metadata:
   version: "1.0"
+  keywords: "ashby, jobs, job-board, salary, remote-work"
 ---
 
 # Ashby Jobs, as Rows You Can Query
@@ -19,7 +20,7 @@ Company names or board slugs in, live Ashby jobs out as structured rows, each wi
 - You need salary as numbers the employer actually published, not a string a human has to read or a model has to guess.
 - You went looking for an Ashby jobs API and found only the employer-side APIs you cannot sign up for.
 
-Not for: finding which companies run Ashby in the first place, or checking a prospect list. Use the companion `apify-companies-using-ashby` skill, built on the same Actor but shaped for discovery. See `references/actor-index.md`.
+Not for: finding which companies run Ashby in the first place, or checking a prospect list. If installed, use the companion `apify-companies-using-ashby` skill, built on the same Actor but shaped for discovery. See `references/actor-index.md`.
 
 ## What you get
 
@@ -110,9 +111,9 @@ Then ask, for example: "Pull the remote engineering jobs from OpenAI and Ramp wi
 
 1. Start with one or two boards and `maxJobs` around 25. Look at the row shape before you pay for a wide crawl.
 2. Company names work as input. "Black Semiconductor" finds the blacksemiconductor board; the Actor tries slug spellings automatically and returns a `board_not_found` error row with `didYouMean` suggestions on a miss.
-3. Filter at the source, not downstream. `titleKeywords`, `departments`, `locationKeywords`, `employmentTypes`, `remoteOnly`, and `publishedAfter` all drop jobs before they are billed.
+3. Filter at the source, not downstream. `titleKeywords`, `departments`, `locationKeywords`, `employmentTypes`, `remoteOnly`, and `publishedAfter` all drop jobs before they are billed. For fully remote requests, also check `workplaceType`: `remoteOnly` can return Hybrid jobs.
 4. Keep `includeDescriptionMarkdown` on for LLM pipelines; turn it off for metadata-only rows at roughly half the per-row cost.
-5. For salary work, read the flat columns. `salaryMin` is null when the employer does not display pay; `shouldDisplayCompensation` tells you which boards publish it.
+5. For salary work, read the flat columns and `salaryDerived.source`. Published ranges can come from native compensation data or description parsing, even when `shouldDisplayCompensation` is false. Do not infer missing pay.
 6. Check `resultType` before treating a row as a job. An `error` row carries `errorCode` and a human-readable `errorMessage`.
 7. Dedupe downstream on `url`. It is canonical and survives a company editing the title.
 
