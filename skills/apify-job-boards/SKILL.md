@@ -1,6 +1,6 @@
 ---
 name: apify-job-boards
-description: Pull job postings from many boards in one run and hand back one deduplicated table. Routes "find jobs / scrape job postings / build a job list / monitor new jobs / track a company's careers page" requests to a multi-board job scraper (LinkedIn, Indeed, Glassdoor, The Muse plus keyless boards) or a remote-only aggregator (RemoteOK, We Work Remotely, Remotive, Jobicy, Himalayas, HN Who is hiring), with only-new-jobs monitoring, per-board caps and honest cost estimates. Use when the user asks to scrape jobs across job boards, get Indeed or Glassdoor postings without an API key, collect remote developer jobs, watch a company's Greenhouse/Lever/Ashby careers page, or set up a daily new-jobs alert.
+description: Pull job postings from many boards in one run and prepare one validated, deduplicated table. Routes "find jobs / scrape job postings / build a job list / monitor new jobs / track a company's careers page" requests to a multi-board job scraper (LinkedIn, Indeed, Glassdoor, The Muse plus keyless boards) or a remote-only aggregator (RemoteOK, We Work Remotely, Remotive, Jobicy, Himalayas, HN Who is hiring), with output-locality checks, per-board raw/qualified/deduplicated counts, only-new-jobs monitoring, per-board caps and honest cost estimates. Use when the user asks to scrape jobs across job boards, get Indeed or Glassdoor postings without an API key, collect remote developer jobs, watch a company's Greenhouse/Lever/Ashby careers page, or set up a daily new-jobs alert.
 author: Zakariae (Flash Scrape)
 author_url: https://github.com/ZAKRIAZ
 metadata:
@@ -10,9 +10,9 @@ metadata:
 
 # Job boards to one table
 
-Turn "I need job postings" into one deduplicated dataset by routing the request to the right multi-board Actor, sizing the run so the user knows the cost before it starts, and returning the rows with the board each job was found on.
-
 Disclosure: the author of this skill owns both Actors it routes to (`flash_scraper/multi-jobboard-scraper` and `flash_scraper/remote-job-aggregator`). They are pay-per-result Actors on the Apify Store; no referral or tracking parameters are used anywhere in this skill.
+
+Turn "I need job postings" into one validated, deduplicated dataset by routing the request to the right multi-board Actor, sizing the run so the user knows the cost before it starts, checking the returned locations and vacancy identities, and returning the rows with the board each job was found on. Treat the Actor output as raw input to these checks, not as proof that its location filtering or deduplication succeeded.
 
 ## Example prompts
 
@@ -21,6 +21,8 @@ Prompts this skill handles:
 - "Scrape software engineer jobs in Austin from LinkedIn, Indeed and Glassdoor into one spreadsheet, no duplicates."
 - "Give me remote Python developer jobs posted this week across the remote job boards, with salary where listed."
 - "Watch Stripe's and OpenAI's careers pages and only tell me about new roles."
+
+For the Austin request, try all three requested boards, then validate each returned location and vacancy identity before delivery. If Glassdoor returns only wrong-city or unverifiable rows, deliver the qualified LinkedIn and Indeed rows as a partial result and report Glassdoor's raw, qualified and deduplicated counts as a board failure. Do not claim three-board coverage merely because Glassdoor returned rows.
 
 Out of scope (the boundary):
 
@@ -46,7 +48,7 @@ Task Progress:
 - [ ] Step 2: Route to the Actor
 - [ ] Step 3: Build the input and state the cost
 - [ ] Step 4: Run and wait
-- [ ] Step 5: Deliver: rows, boards covered, what was deduplicated
+- [ ] Step 5: Validate and deliver: locality, vacancy identity, per-board counts and failures
 ```
 
 ### Step 1: Get the four anchors
@@ -64,7 +66,7 @@ Optional follow-ups, only if the user raises them: posted-within window, salary 
 
 | User need | Actor ID | Tier | Best for |
 |-----------|----------|------|----------|
-| Jobs by role + location across the big boards, deduplicated | `flash_scraper/multi-jobboard-scraper` | community | LinkedIn, Indeed, Glassdoor, The Muse by default; 8 more keyless boards optional; one row per role even when it is posted on three boards |
+| Jobs by role + location across the big boards | `flash_scraper/multi-jobboard-scraper` | community | LinkedIn, Indeed, Glassdoor, The Muse by default; 8 more keyless boards optional; returns raw candidates that still require locality and vacancy-identity validation |
 | Remote-only jobs from the remote boards | `flash_scraper/remote-job-aggregator` | community | RemoteOK, We Work Remotely, Working Nomads, DevITjobs, The Muse, Remotive, Jobicy, Himalayas, HN "Who is hiring", Arbeitnow (opt-in); cheapest per row |
 | Watch named companies' careers pages | `flash_scraper/multi-jobboard-scraper` with `atsCompanies` | community | Greenhouse, Lever, Ashby and other ATS boards read directly; combine with `onlyNewJobs` for a daily alert |
 
@@ -136,12 +138,19 @@ Typical durations: a 4-board, 20-per-board multi-board run finishes in about a m
     apify datasets get-items DATASET_ID --format json \
       --user-agent apify-awesome-skills/apify-job-boards 2>/dev/null
 
-### Step 5: Deliver
+### Step 5: Validate and deliver
+
+Treat the downloaded dataset as raw output. Before delivery:
+
+1. For a location-constrained request, inspect every returned `location` against the requested city, region and country. Keep matching rows as qualified; separate wrong-location and missing or unverifiable locations. A board answered only if it produced qualified rows, not merely raw rows.
+2. Build a stable vacancy identity. Prefer an employer/ATS vacancy ID when available; otherwise use a board's stable job ID together with its board namespace, since unrelated boards can reuse IDs. Otherwise use the job URL after removing only parameters documented or clearly identified as tracking; preserve unknown parameters and every path or parameter that can distinguish requisitions. Use company, normalized title and location only to flag candidates for review, never as the sole basis for merging distinct vacancies.
+3. Re-run the identity check across all raw rows even when `found_on_sites` or `duplicate_count` says the Actor already merged them. Merge rows only when their stable identity matches, combine their source boards, and retain genuinely distinct requisitions. Preserve the locality decision for each source row; a duplicate link must not turn an excluded location into qualified coverage.
+4. Calculate raw, location-qualified and deduplicated counts for each requested board. Keep excluded rows available separately with the exclusion reason so the user can audit the partial result.
 
 Report, in this order:
 
-1. Row count delivered and how many boards answered (the multi-board run log prints `Total: N jobs - indeed: a, muse: b, ...`).
-2. What was deduplicated: on the multi-board scraper every row carries `found_on_sites` (the boards that listed the same role) and `duplicate_count`; the remote aggregator merges by canonical job URL and by title + company.
+1. Total delivered rows and a per-board table of raw, qualified and deduplicated counts. Name wrong-location, unverifiable-location, empty and blocked boards as partial failures.
+2. What the local identity check merged, which stable identifier supported each merge, and which possible duplicates remain unresolved. `found_on_sites` and `duplicate_count` are useful evidence but are not proof that deduplication is complete.
 3. The columns the user asked for. Verified column names on the multi-board scraper include `title`, `company`, `location`, `site`, `date_posted`, `job_url`, `found_on_sites`, `duplicate_count`; the dataset has 54 stable columns, all listed in the Actor README under "Output fields". Do not invent columns: if a field the user wants is not in the dataset, say so.
 4. A link to the dataset or the Console run, and the run's HTML report URL (both Actors write one to the run's key-value store, printed in the log as `Report saved:`).
 
@@ -151,7 +160,8 @@ Salary is present only where a board publishes it (roughly a third of postings o
 
 - **A board shows 0 rows or "blocked" in the log** → the run still succeeds; the report names the board. LinkedIn, Indeed and Glassdoor are fetched through Apify's datacenter proxy by default and occasionally throttle a single search; rerun with a narrower term or fewer boards rather than raising `maxResults`.
 - **Rows that do not match the role** → set `strictKeywordMatch: true` (multi-board) or `strictFilters: true` (remote); both filter before billing.
-- **Same job appears twice** → it came from two boards with different canonical URLs and different titles; `found_on_sites` shows the merge that did happen. Deduplicate further on `company` + normalized `title` if the user wants a stricter merge.
+- **Same job appears twice** → inspect stable job or requisition IDs first, then compare URLs after removing only confirmed tracking parameters. The Actor can leave duplicates even when rows report `duplicate_count`; merge confirmed matching identities across or within a board, but do not merge on company + normalized title alone because separate requisitions can share both.
+- **A board returns jobs outside the requested city** → classify those rows as wrong-location and exclude them from the qualified table; separate missing or ambiguous locations as unverifiable. Report the board's raw, qualified and deduplicated counts and deliver an honest partial result from the boards that did satisfy the locality check.
 - **`countryIndeed` errors** → Indeed and Glassdoor need a country code (`usa`, `uk`, `canada`, ...); the location string alone does not set it.
 - **Monitoring run delivers nothing** → with `onlyNewJobs: true` an empty run means no new postings since the last delivery, which is the expected result, not a failure. The run's status message says so.
 - **Cost higher than expected** → `maxResults` is per board and `sites` may include boards the user did not mean; list the boards and the cap back to the user before the next run.
