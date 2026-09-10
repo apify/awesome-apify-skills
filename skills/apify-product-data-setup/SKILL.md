@@ -41,10 +41,16 @@ Authentication: OAuth on first use for interactive clients, a bearer token from 
 
 ## Encode the fetch flow
 
-Fetching products is **two calls, and sometimes three**. This is the single most important thing to get into the agent's instructions:
+Fetching products starts with the Actor call, may require several status polls, and
+finishes with one dataset read. This is the single most important thing to get into the
+agent's instructions:
 
 1. `apify--e-commerce-scraping-tool` returns run metadata and a `datasetId`. No products.
-2. If `status` is not `SUCCEEDED`, poll `get-actor-run` with the `runId` until it is. The Actor tool returns when its own wait window elapses rather than when the run finishes, so `RUNNING` is a normal answer and the dataset is empty at that moment.
+2. If `status` is not terminal, poll `get-actor-run` with the validated `runId` until it
+   succeeds or a caller-defined deadline expires. Treat `FAILED`, `ABORTED`, and
+   `TIMED-OUT` as failures. The Actor tool returns when its own wait window elapses rather
+   than when the run finishes, so `RUNNING` is a normal answer and the dataset is empty at
+   that moment.
 3. `get-dataset-items` returns the products. Pass `fields` in dot notation: the unprojected record measured about 88 KB across 142 fields, and projecting keeps that out of the context window.
 
 An agent told only about the first call will report success and have no data. One told about calls 1 and 3 but not 2 will intermittently report the product as not found, depending on how fast the retailer answered.
@@ -58,7 +64,7 @@ The server exposes `get-actor-run`, `get-dataset-items`, `get-key-value-store-re
 The pattern that survives contact with production:
 
 1. Keep a list of the product URLs the agent answers about.
-2. Batch them into Actor calls. Keep batches small: the call shares one 300 second timeout, and a batch that times out loses every product in it.
+2. Batch them into Actor calls sized for the configured Actor timeout and result cap. A client wait deadline does not stop the Actor. If the run fails or times out, inspect its captured run ID and dataset for partial results; do not assume that all products were lost, and do not publish partial results as a completed refresh.
 3. Normalize the output before storing. Field names, types, and nesting vary by retailer; see `references/fields.md`.
 4. Stamp every document with the fetch time.
 5. Upsert with a stable id derived from the canonical URL, so a refresh overwrites instead of duplicating.
@@ -80,7 +86,8 @@ true this second, call the product data tool instead of answering from the catal
 
 The Actor bills per event: a start event per call, per product pushed, plus residential proxy and browser rendering where a retailer needs them.
 
-- `maxProductResults` is a hard cap the platform enforces. Always set it.
+- `maxProductResults` is the Actor's result cap. Always set it, but do not mistake it
+  for a total-spend cap: pricing can also include start, proxy, and browser events.
 - Batch. One call for 200 products costs far less than 200 calls for one.
 - `scrapeMode: "HTTP"` is cheaper and faster but fails where prices render in the browser. `"AUTO"` is the safe default.
 

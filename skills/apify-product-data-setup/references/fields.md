@@ -100,9 +100,14 @@ problem rather than as fixed ratios.
 **Name**: `name` or `title`, then strip a trailing `Opens in a new window or tab`. Strip
 it as a suffix only, so a product whose name genuinely contains the phrase survives.
 
-**Price**: read `offers.price`. If it is a string, strip everything except digits and
-dots. Guard against a stray thousands separator leaving two dots. Reject zero and
-negatives. In Python, note that `True` is an `int`, so check for `bool` first.
+**Price**: read `offers.price`. Accept a positive number (checking for `bool` first in
+Python) or a string that contains one unambiguous positive decimal number. Trim
+whitespace and an optional currency symbol or code at either edge, then parse only these
+forms: digits; digits with one dot decimal separator; or groups of three digits separated
+by commas/spaces plus an optional dot decimal. A locale-aware parser may accept a decimal
+comma only when the source locale is known. Reject mixed or ambiguous punctuation,
+embedded currency text, zero, and negatives instead of stripping characters and silently
+changing the value. A generic parser must reject `1,23` rather than turn it into `123`.
 
 **Currency**: `offers.priceCurrency`, then `offers.currency`, then
 `additionalProperties.currencyRaw`. If the value is alphabetic it is a code and takes
@@ -114,8 +119,9 @@ because the slot carries free marketing text and a phrase presented as a brand r
 as fact.
 
 **Stock**: `inStock` at top level, then `additionalProperties.inStock`, then parse
-`offers.availability` or `availability` for in-stock and out-of-stock wording. Keep
-three states: true, false, and unknown. Never map unknown to false.
+`offers.availability`, `additionalProperties.availability`, or top-level `availability`
+for in-stock and out-of-stock wording. Keep three states: true, false, and unknown. Never
+map unknown to false. The `additionalProperties.availability` path was observed on Alza.
 
 **Rating**: `additionalProperties.stars` first, then top-level `rating`. Treat zero as
 absent.
