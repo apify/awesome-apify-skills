@@ -10,9 +10,12 @@ apify actors info "johnvc/clutch-agency-api" --json \
   2>/dev/null
 ```
 
+If this metadata JSON cannot be parsed, use `apify api` to GET `/v2/actors/johnvc~clutch-agency-api`, with the same skill user-agent in the `User-Agent` header. Parse the complete pricing records; keep authentication in the CLI or an Authorization header, never in the URL.
+
 ## Cost model
 
 - Pay per event, no start fee. A run that delivers nothing costs almost nothing.
+- Include the `apify-default-dataset-item` charge for each stored row in addition to the applicable listing, profile, or review event. Read current event prices before estimating the run.
 - `listing-scraped`: one per agency row delivered. Listings are priced as a loss leader, so a whole category is cheap.
 - A company that repeats across pages (sponsored and featured cards) is de-duplicated and billed once.
 - `maxPagesPerDirectory` caps the pages fetched; `maxItems` caps the whole run. Each page is a separate request, so page depth is the main cost lever.
@@ -32,4 +35,4 @@ Rule of thumb for confirmation: mention cost under about $5, warn over about $5,
 - Zero rows and no error row: the input was not a valid Clutch directory URL (a profile URL or a non-Clutch host normalizes away). Paste a category page URL such as `https://clutch.co/agencies/digital-marketing`.
 - Later pages returning nothing is the natural end of pagination, not a failure.
 - A sparse row is a thin Clutch card, not a parse error. Enrich its `profile_url` for the full record.
-- Retry a transient failure once before assuming a category is unavailable.
+- Before retrying, check the original run ID and status. If the start response was lost, recover the existing run first so an uncertain response does not trigger a second paid run.
