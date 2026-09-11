@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened, labeled, unlabeled]
   push:
-    branches: [main]
+    branches: [codex/catalog-token-probe]
     paths:
       - "scripts/**"
       - "skills/**"
@@ -283,14 +283,14 @@ jobs:
     # Serialize regen runs: two quick merges must not race each other's push
     # (a lost race can leave main's catalog stale until the next push).
     concurrency:
-      group: regenerate-main
+      group: regenerate-codex/catalog-token-probe
       cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout latest main
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: codex/catalog-token-probe
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v4
@@ -319,12 +319,12 @@ jobs:
             # catalog must never land on main. (~2 s warm, exit 1 on invalid.)
             npx --yes @anthropic-ai/claude-code plugin validate --strict .
             git commit -am "chore: regenerate marketplace.json, AGENTS.md and README [bot]"
-            if git push; then
+            if git push origin "HEAD:codex/catalog-token-probe"; then
               exit 0
             fi
             echo "Push rejected (main moved) — refreshing and retrying ($attempt/3)."
-            git fetch origin main
-            git reset --hard origin/main
+            git fetch origin codex/catalog-token-probe
+            git reset --hard origin/codex/catalog-token-probe
           done
           echo "::error::regenerate: could not push after 3 attempts — main is moving too fast; re-run this job."
           exit 1
