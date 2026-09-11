@@ -4,13 +4,9 @@ Cost guardrails, error recovery, and input quirks. The agent reads this on deman
 
 ## Cost guardrails
 
-Pricing model: pay per event. At the time of writing: a one-time start fee of about $0.08 per run, plus about $0.10 per page of results processed on the free tier (volume discounts bring pages to $0.05), plus a negligible per-result fee. Confirm the live price on the Store card or with `apify actors info "johnvc/Scrape-Yandex" --json --user-agent apify-awesome-skills/apify-yandex-image-search-api 2>/dev/null` (look at `pricingInfo`).
+Pricing model: pay per event. Fetch current `pricingInfos` with `apify actors info "johnvc/Scrape-Yandex" --json --user-agent apify-awesome-skills/apify-yandex-image-search-api 2>/dev/null`. Use the latest entry whose `startedAt` is not in the future and the authenticated account’s discount tier.
 
-Estimate before running: cost is about $0.08 + (`max_pages` times the per-page price). The image filters do not change the price; they change how many rows a page yields.
-
-- Default 2-page image run: about $0.28.
-- 10 queries at 2 pages each: about $2.80.
-- 100-query dataset build: about $28; get explicit confirmation first.
+Estimate the one-time `setup` event, `page_processed` events, and `apify-default-dataset-item` for each stored dataset row. Use `eventPriceUsd` for flat rates or `eventTieredPricingUsd` for the account’s tier; nested results are not dataset rows. Use a positive `max_pages` to bound the run; zero means no limit.
 
 Suggested confirmation thresholds:
 
@@ -28,6 +24,8 @@ Suggested confirmation thresholds:
 | Wrong-market images | Domain, language, region not aligned | Set `yandex_domain`, `lang`, and `lr` together. |
 
 ## Actor-specific notes
+
+- `original` is the image URL returned by the Actor; it may point to a resized image rather than the full-size source.
 
 - The Images vertical shares the Actor and pricing with the web SERP skill; one run can return both if you leave `include_organic_results` true.
 - `image_site` takes one hosting site (for example commons.wikimedia.org), useful for license-friendly sourcing.

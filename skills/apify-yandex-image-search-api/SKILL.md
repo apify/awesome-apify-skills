@@ -1,11 +1,13 @@
 ---
 name: apify-yandex-image-search-api
 description: Search the Yandex Images vertical and get full-size image URLs as structured JSON with the Apify Yandex Search Scraper Actor (johnvc/Scrape-Yandex). A yandex image search api for agents and pipelines. One text query returns image results with the original full-size image URL, hosting page link, thumbnail, and source, filtered by image type, color, orientation, file type, exact size, site, and recency. Use when the user wants a yandex image search api or yandex images api, wants to search Yandex Images programmatically, collect image datasets with full-size URLs, source images from Russian-language sites, or filter image results by color, size, or license-friendly site. Pay-per-page billing, MCP-ready for Claude and other AI agents.
-author: John Cole
+author: John Cole (links use the author’s Apify affiliate code; routed Actors are built by the author)
 author_url: https://github.com/johnisanerd
 license: MIT
 metadata:
   version: "1.0"
+  keywords: "apify, yandex, image-search, images-api, image-dataset, json, mcp, claude"
+  category: data-extraction
 ---
 
 # Yandex Image Search API: Full-Size Image URLs as JSON
@@ -47,7 +49,7 @@ apify actors call "johnvc/Scrape-Yandex" -i '{"text":"aurora borealis","include_
   2>/dev/null
 ```
 
-Filtered: recent, large, horizontal photos from one site:
+Filtered: recent, horizontal photos from one site:
 
 ```bash
 apify actors call "johnvc/Scrape-Yandex" -i '{"text":"moscow skyline","include_image_search":true,"include_organic_results":false,"image_type":"photo","image_orientation":"horizontal","image_recent":true,"image_site":"commons.wikimedia.org","max_pages":2}' \
@@ -68,11 +70,11 @@ Then ask, for example: "Search Yandex Images for red vintage bicycles, photos on
 
 ## Workflow
 
-1. Build the query. `text` is required. Set `include_image_search` true; turn `include_organic_results` false unless you also want the web SERP in the same run.
+1. Fetch the current input schema with `apify actors info "johnvc/Scrape-Yandex" --input --json --user-agent apify-awesome-skills/apify-yandex-image-search-api 2>/dev/null` (read `taggedBuilds.latest.build.inputSchema`), then build the query. `text` is required. Set `include_image_search` true; turn `include_organic_results` false unless you also want the web SERP in the same run.
 2. Apply filters. `image_type` (photo, clipart, and so on), `image_color`, `image_orientation`, `image_file_type`, exact `image_width` and `image_height`, `image_site` (one hosting site), `image_recent` (fresh images only).
 3. Bound the volume. `max_pages` (default 2) is the cost driver.
 4. Estimate cost, then confirm with the user if the run is large. See `references/gotchas.md`.
-5. Run the Actor, filter the dataset to `item_type` = "image_search", and read each item's `image_results` array (`original` is the full-size URL, `link` the hosting page). Download files yourself only where the hosting page's license allows it.
+5. Run the Actor, then read the completed run’s `defaultDatasetId` into `DATASET_ID` and fetch its rows with `apify datasets get-items "$DATASET_ID" --format json --user-agent apify-awesome-skills/apify-yandex-image-search-api 2>/dev/null`. Filter the dataset to `item_type` = "image_search", and read each item's `image_results` array (`original` is the full-size URL, `link` the hosting page). Download files yourself only where the hosting page's license allows it.
 
 ## Inputs
 
