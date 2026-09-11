@@ -1,11 +1,13 @@
 ---
 name: apify-yandex-search-api
 description: Get structured Yandex search results without an official API key using the Apify Yandex Search Scraper Actor (johnvc/Scrape-Yandex). One query returns the full SERP as JSON, with organic results (position, title, link, displayed_link, snippet), and optional ads, knowledge graph, inline images, and inline videos, targeted by Yandex domain, language, and any of 123,000 plus lr region IDs. Use when the user wants a yandex search api, a yandex serp api, Yandex search results as JSON or CSV, to scrape Yandex search, to check what ranks on yandex.ru for a query or region, or SEO research for Russian-speaking markets. Pay-per-page billing, MCP-ready for Claude and other AI agents.
-author: John Cole
+author: John Cole (links use the author’s Apify affiliate code; routed Actors are built by the author)
 author_url: https://github.com/johnisanerd
 license: MIT
 metadata:
   version: "1.0"
+  keywords: "apify, yandex, yandex-search, serp, search-api, seo, json, mcp, claude"
+  category: data-extraction
 ---
 
 # Yandex Search API: Full SERP Results as JSON
@@ -68,11 +70,11 @@ Then ask, for example: "Get the first two pages of Yandex results for 'hotel boo
 
 ## Workflow
 
-1. Build the query. `text` is the only required field. Pick `yandex_domain` (six domains), `lang` (19 languages), and `lr` (region ID, for example 213 for Moscow, 2 for Saint Petersburg) for the market you care about.
+1. Fetch the current input schema with `apify actors info "johnvc/Scrape-Yandex" --input --json --user-agent apify-awesome-skills/apify-yandex-search-api 2>/dev/null` (read `taggedBuilds.latest.build.inputSchema`), then build the query. `text` is the only required field. Pick `yandex_domain` (six domains), `lang` (19 languages), and `lr` (region ID, for example 213 for Moscow, 2 for Saint Petersburg) for the market you care about.
 2. Choose result types. Organic is on by default; flip `include_ads`, `include_knowledge_graph`, `include_inline_images`, or `include_inline_videos` as needed. Each page of each type comes back as its own dataset item tagged with `item_type`.
 3. Bound the volume. `max_pages` (default 2) is the cost driver; `sort_mode` "date" and `period` narrow to recent results.
 4. Estimate cost, then confirm with the user if the run is large. See `references/gotchas.md`.
-5. Run the Actor and read the dataset. Filter items by `item_type`, then read the nested array on each item (`organic_results` for the web SERP). Flatten the arrays client-side if the user wants CSV.
+5. Run the Actor, then read the completed run’s `defaultDatasetId` into `DATASET_ID` and fetch its rows with `apify datasets get-items "$DATASET_ID" --format json --user-agent apify-awesome-skills/apify-yandex-search-api 2>/dev/null`. Check all items for `error` and `error_message` before filtering by `item_type`, then read the nested array on each item (`organic_results` for the web SERP). Flatten the arrays client-side if the user wants CSV.
 
 ## Inputs
 
@@ -83,7 +85,7 @@ Then ask, for example: "Get the first two pages of Yandex results for 'hotel boo
 - `max_pages` (integer, default 2) and `groups_on_page` (default 10)
 - `sort_mode` (`relevance` or `date`), `period`, `family_mode`, `fix_typo`
 
-The dedicated Images and Videos verticals (`include_image_search`, `include_video_search`) have their own skill: see the Yandex image search API skill.
+For video results in the web SERP, set `include_inline_videos: true` and keep `include_organic_results: true`. Read `inline_videos` on items with `item_type: "inline_videos"`; return `title`, `duration`, and `source_link` when present (`link` opens the Yandex preview). For the dedicated Images vertical (`include_image_search`), see the Yandex image search API skill. Dedicated video search (`include_video_search`) is a separate Actor mode; see `references/gotchas.md` before using it.
 
 ## Cost
 
@@ -91,7 +93,7 @@ Billing is a small one-time start fee per run plus a per-page fee, so cost is ro
 
 ## Honest limits
 
-- Positions reflect the SERP at crawl time for the chosen `lr` region; they vary by region and personalization-free crawling can still fluctuate run to run.
+- Keep `page_number` with `position`: positions restart on each page. Positions reflect the SERP at crawl time for the chosen `lr` region; they vary by region and personalization-free crawling can still fluctuate run to run.
 - This skill reads the SERP; it does not track ranks over time (that is the pay-per-result edition's job).
 - Knowledge graph, ads, and inline media appear only when Yandex shows them for that query.
 
@@ -99,7 +101,7 @@ Billing is a small one-time start fee per run plus a per-page fee, so cost is ro
 
 - Empty organic results: check the query on the chosen domain manually; try `fix_typo` true and a broader query.
 - Wrong-market results: set `yandex_domain`, `lang`, and `lr` together; `lr` alone does not switch language.
-- Fewer pages than `max_pages`: Yandex ran out of results; `pagination_limit_reached` shows in run metadata.
+- `pagination_limit_reached` true means the configured page limit was reached. For fewer pages, inspect returned items and run errors before assuming Yandex ran out of results.
 
 See `references/gotchas.md` for cost guardrails and error recovery, and `references/actor-index.md` for the Actor routing table.
 
